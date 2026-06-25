@@ -5,7 +5,8 @@ import { colors, GESTURE_EMOJI } from './theme';
 const PHOTO = [
   { emoji: GESTURE_EMOJI.thumbsUp, label: 'Photo' },
   { emoji: GESTURE_EMOJI.v, label: 'Photo' },
-  { emoji: GESTURE_EMOJI.heart, label: 'Photo' },
+  { emoji: GESTURE_EMOJI.salute, label: 'Photo' },
+  { emoji: GESTURE_EMOJI.halfHeart, label: 'Photo' },
 ];
 
 export function GestureLegend() {
@@ -14,7 +15,7 @@ export function GestureLegend() {
       {PHOTO.map((g, i) => (
         <Item key={`p${i}`} emoji={g.emoji} label={g.label} />
       ))}
-      <Item emoji={GESTURE_EMOJI.fist} label="5s video" />
+      <Item emoji={GESTURE_EMOJI.three} label="5s video" />
     </View>
   );
 }

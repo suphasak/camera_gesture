@@ -5,7 +5,7 @@ export type Landmark = { x: number; y: number; z: number };
 export type HandLandmarks = Landmark[];
 
 /** Gestures the app recognizes. */
-export type Gesture = 'thumbsUp' | 'v' | 'heart' | 'fist';
+export type Gesture = 'thumbsUp' | 'v' | 'salute' | 'halfHeart' | 'three';
 
 /** What a recognized gesture triggers. */
 export type CaptureKind = 'photo' | 'video';
@@ -13,6 +13,7 @@ export type CaptureKind = 'photo' | 'video';
 export const GESTURE_ACTION: Record<Gesture, CaptureKind> = {
   thumbsUp: 'photo',
   v: 'photo',
-  heart: 'photo',
-  fist: 'video',
+  salute: 'photo',
+  halfHeart: 'photo',
+  three: 'video',
 };

@@ -27,9 +27,9 @@ test('changing gesture mid-hold resets progress', () => {
 
 test('null input resets state', () => {
   let s = createArmingState(0);
-  s = armingStep(s, 'fist', 0, HOLD);
-  s = armingStep(s, 'fist', 1600, HOLD);
-  expect(s.armed).toBe('fist');
+  s = armingStep(s, 'three', 0, HOLD);
+  s = armingStep(s, 'three', 1600, HOLD);
+  expect(s.armed).toBe('three');
   s = armingStep(s, null, 1700, HOLD);
   expect(s.gesture).toBeNull();
   expect(s.armed).toBeNull();
@@ -46,7 +46,7 @@ test('armed gesture does not refire while held', () => {
 
 test('progress climbs from 0 to 1', () => {
   let s = createArmingState(0);
-  s = armingStep(s, 'heart', 0, HOLD);
+  s = armingStep(s, 'salute', 0, HOLD);
   expect(armingProgress(s, 750, HOLD)).toBeCloseTo(0.5);
   expect(armingProgress(s, 3000, HOLD)).toBe(1);
 });

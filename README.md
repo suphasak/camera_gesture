@@ -9,11 +9,24 @@ on-device. No backend, no uploads — your camera feed never leaves the phone.
 |---|---|
 | 👍 Thumbs up | Photo |
 | ✌️ V sign | Photo |
-| 🫰 Finger heart | Photo |
-| ✊ Curled hand held up | Record 5-second video |
+| 🫡 Salute (4 fingers up, together) | Photo |
+| 🫰 Finger heart (thumb+index pinch, other 3 folded) | Photo |
+| 3️⃣ Three fingers up (index+middle+ring, pinky down) | Record 5-second video |
 
-A gesture must be held steady for ~1.5s (a confirm ring fills), then capture.
-After capture you review and save straight to the iOS Photos library, or retake.
+A capture gesture must be held steady for ~1.5s (a confirm ring fills), then it
+fires. After capture you review and save straight to the iOS Photos library, or
+retake.
+
+### Wide angle (zoom)
+
+| Gesture | Action |
+|---|---|
+| ✋ Open palm (fingers spread) | Expand to the lens's full width |
+| ✊ Closed palm / fist | Back to the normal (slightly cropped) view |
+
+The front camera can't go wider than its native field of view, so the default
+view is a mild 1.2× crop and open-palm "expands" back to full width. Capture
+gestures always take priority over the zoom poses.
 
 ## Stack
 

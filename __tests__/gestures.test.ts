@@ -1,82 +1,69 @@
 import { classifyGesture } from '../src/vision/gestures';
 import { HandLandmarks } from '../src/types';
-import { blankHand, setFinger } from './_fixtures';
+import { openHand, curlFinger, curlThumb, togetherFingers } from './_fixtures';
 
-function thumbsUpHand(): HandLandmarks {
-  const lm = blankHand();
-  setFinger(lm, 'thumb', true, 0, -1); // thumb up (negative y)
-  setFinger(lm, 'index', false, 0, -1);
-  setFinger(lm, 'middle', false, 0, -1);
-  setFinger(lm, 'ring', false, 0, -1);
-  setFinger(lm, 'pinky', false, 0, -1);
+function threeHand(): HandLandmarks {
+  const lm = openHand();
+  curlFinger(lm, 'pinky'); // index, middle, ring up; pinky down
   return lm;
 }
 
 function vHand(): HandLandmarks {
-  const lm = blankHand();
-  setFinger(lm, 'thumb', false, 1, 0);
-  setFinger(lm, 'index', true, -0.5, -1);
-  setFinger(lm, 'middle', true, 0.5, -1);
-  setFinger(lm, 'ring', false, 0, -1);
-  setFinger(lm, 'pinky', false, 0, -1);
+  const lm = openHand();
+  curlThumb(lm);
+  curlFinger(lm, 'ring');
+  curlFinger(lm, 'pinky');
   return lm;
 }
 
-function heartHand(): HandLandmarks {
-  const lm = blankHand();
-  // thumb + index extended, tips nearly touching
-  lm[2] = { x: 0.05, y: -1, z: 0 };
-  lm[4] = { x: 0.1, y: -2, z: 0 };
-  lm[6] = { x: 0, y: -1, z: 0 };
-  lm[8] = { x: 0, y: -2, z: 0 };
-  setFinger(lm, 'middle', false, 0, -1);
-  setFinger(lm, 'ring', false, 0, -1);
-  setFinger(lm, 'pinky', false, 0, -1);
+function thumbsUpHand(): HandLandmarks {
+  const lm = openHand();
+  curlFinger(lm, 'index');
+  curlFinger(lm, 'middle');
+  curlFinger(lm, 'ring');
+  curlFinger(lm, 'pinky');
   return lm;
 }
 
-function fistHand(): HandLandmarks {
-  const lm = blankHand();
-  setFinger(lm, 'thumb', false, 1, 0);
-  setFinger(lm, 'index', false, 0, -1);
-  setFinger(lm, 'middle', false, 0, -1);
-  setFinger(lm, 'ring', false, 0, -1);
-  setFinger(lm, 'pinky', false, 0, -1);
+function saluteHand(): HandLandmarks {
+  const lm = openHand();
+  togetherFingers(lm);
   return lm;
 }
 
-function openHand(): HandLandmarks {
-  const lm = blankHand();
-  setFinger(lm, 'thumb', true, 1, 0);
-  setFinger(lm, 'index', true, -0.6, -1);
-  setFinger(lm, 'middle', true, -0.2, -1);
-  setFinger(lm, 'ring', true, 0.2, -1);
-  setFinger(lm, 'pinky', true, 0.6, -1);
+function halfHeartHand(): HandLandmarks {
+  const lm = openHand();
+  curlFinger(lm, 'middle'); // 🫰: the other three fingers are folded
+  curlFinger(lm, 'ring');
+  curlFinger(lm, 'pinky');
+  // thumb + index pinched close, index still raised toward the thumb
+  lm[4] = { x: 0.42, y: 0.42, z: 0 }; // thumb tip
+  lm[8] = { x: 0.46, y: 0.46, z: 0 }; // index tip
   return lm;
 }
 
-test('thumbs up', () => {
-  expect(classifyGesture([thumbsUpHand()])).toBe('thumbsUp');
+test('three fingers up (video)', () => {
+  expect(classifyGesture([threeHand()])).toBe('three');
 });
 
 test('v sign', () => {
   expect(classifyGesture([vHand()])).toBe('v');
 });
 
-test('finger heart', () => {
-  expect(classifyGesture([heartHand()])).toBe('heart');
+test('thumbs up', () => {
+  expect(classifyGesture([thumbsUpHand()])).toBe('thumbsUp');
 });
 
-test('fist', () => {
-  expect(classifyGesture([fistHand()])).toBe('fist');
+test('salute (fingers together)', () => {
+  expect(classifyGesture([saluteHand()])).toBe('salute');
 });
 
-test('open hand is not a gesture', () => {
-  expect(classifyGesture([openHand()])).toBeNull();
+test('half-heart / love sign (thumb + index only)', () => {
+  expect(classifyGesture([halfHeartHand()])).toBe('halfHeart');
 });
 
-test('heart is not misread as v (middle stays curled)', () => {
-  expect(classifyGesture([heartHand()])).not.toBe('v');
+test('v is not misread as three (ring folded)', () => {
+  expect(classifyGesture([vHand()])).toBe('v');
 });
 
 test('no hands returns null', () => {

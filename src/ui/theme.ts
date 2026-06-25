@@ -13,13 +13,15 @@ export const colors = {
 export const GESTURE_EMOJI: Record<Gesture, string> = {
   thumbsUp: '👍',
   v: '✌️',
-  heart: '🫰',
-  fist: '✊',
+  salute: '🫡',
+  halfHeart: '🫰',
+  three: '3️⃣',
 };
 
 export const GESTURE_LABEL: Record<Gesture, string> = {
   thumbsUp: 'Thumbs up',
   v: 'V sign',
-  heart: 'Finger heart',
-  fist: 'Hold for video',
+  salute: 'Salute',
+  halfHeart: 'Finger heart',
+  three: 'Hold for video',
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { CaptureKind } from '../types';
 import { saveToPhotos } from '../save/saveToPhotos';
@@ -28,8 +28,9 @@ export function ReviewScreen({
       await saveToPhotos(uri);
       setSaved(true);
       setTimeout(onDone, 900);
-    } catch {
+    } catch (e) {
       setSaved(false);
+      Alert.alert('Could not save', e instanceof Error ? e.message : String(e));
     }
   };
 
