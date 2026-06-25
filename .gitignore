@@ -24,3 +24,6 @@ android/
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+
+# expo native build dirs (already covered) and EAS
+*.tsbuildinfo
