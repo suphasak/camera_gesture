@@ -1,20 +1,45 @@
+import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { CaptureKind } from './src/types';
+import { PermissionScreen } from './src/screens/PermissionScreen';
+import { CameraScreen } from './src/screens/CameraScreen';
+import { ReviewScreen } from './src/screens/ReviewScreen';
+
+type Captured = { uri: string; kind: CaptureKind };
+type Phase = 'permission' | 'camera' | 'review';
 
 export default function App() {
+  const [phase, setPhase] = useState<Phase>('permission');
+  const [captured, setCaptured] = useState<Captured | null>(null);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <>
+      <StatusBar style="light" />
+      {phase === 'permission' && (
+        <PermissionScreen onReady={() => setPhase('camera')} />
+      )}
+      {phase === 'camera' && (
+        <CameraScreen
+          onCaptured={(m) => {
+            setCaptured(m);
+            setPhase('review');
+          }}
+        />
+      )}
+      {phase === 'review' && captured && (
+        <ReviewScreen
+          uri={captured.uri}
+          kind={captured.kind}
+          onRetake={() => {
+            setCaptured(null);
+            setPhase('camera');
+          }}
+          onDone={() => {
+            setCaptured(null);
+            setPhase('camera');
+          }}
+        />
+      )}
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

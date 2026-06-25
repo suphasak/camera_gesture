@@ -1,17 +1,25 @@
 {
   "expo": {
-    "name": "gcam_scaffold",
-    "slug": "gcam_scaffold",
+    "name": "Gesture Camera",
+    "slug": "gesture-camera",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.suphasak.gesturecamera",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Gesture Camera uses the camera to see your hand gestures and take photos and videos.",
+        "NSMicrophoneUsageDescription": "Gesture Camera records audio with your 5-second videos.",
+        "NSPhotoLibraryAddUsageDescription": "Gesture Camera saves your photos and videos to your Photos library."
+      }
     },
     "android": {
+      "package": "com.suphasak.gesturecamera",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#000000",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -20,6 +28,24 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-video",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Gesture Camera uses the camera to see your hand gestures.",
+          "enableMicrophonePermission": true,
+          "microphonePermissionText": "Gesture Camera records audio with your 5-second videos."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "savePhotosPermission": "Gesture Camera saves your photos and videos to Photos.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
+    ]
   }
 }

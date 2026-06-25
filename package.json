@@ -4,9 +4,14 @@
   "main": "index.ts",
   "dependencies": {
     "expo": "~56.0.12",
+    "expo-media-library": "~56.0.7",
     "expo-status-bar": "~56.0.4",
+    "expo-video": "~56.1.4",
     "react": "19.2.3",
-    "react-native": "0.85.3"
+    "react-native": "0.85.3",
+    "react-native-svg": "15.15.4",
+    "react-native-vision-camera": "^4.7.3",
+    "react-native-worklets-core": "^1.6.3"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
