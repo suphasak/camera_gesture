@@ -10,7 +10,7 @@ import {
 import { useRunOnJS } from 'react-native-worklets-core';
 import { CaptureKind, Gesture, GESTURE_ACTION, HandLandmarks } from '../types';
 import { classifyGesture } from '../vision/gestures';
-import { fingerStates, isClosedPalm, isOpenPalm } from '../vision/fingers';
+import { isClosedPalm, isOpenPalm } from '../vision/fingers';
 import { detectHands } from '../vision/detectHands';
 import { useGestureArming } from '../confirm/useGestureArming';
 import { usePhotoCapture } from '../capture/usePhotoCapture';
@@ -35,7 +35,6 @@ export function CameraScreen({
   const cameraRef = useRef<Camera>(null);
   const busyRef = useRef(false);
   const [coach, setCoach] = useState('Show a gesture 👋');
-  const [debug, setDebug] = useState('no hand');
 
   // Wide angle: ✋ open palm → full lens width, ✊ closed palm → normal crop.
   const minZoom = device?.minZoom ?? 1;
@@ -73,7 +72,6 @@ export function CameraScreen({
 
   const onHands = useRunOnJS((hands: HandLandmarks[]) => {
     if (hands.length === 0) {
-      setDebug('no hand');
       setCoach('Show a gesture 👋');
       arming.update(null);
       return;
@@ -81,12 +79,6 @@ export function CameraScreen({
 
     const lm = hands[0];
     const g = classifyGesture(hands);
-
-    const s = fingerStates(lm);
-    const b = (v: boolean) => (v ? '1' : '0');
-    setDebug(
-      `T${b(s.thumb)} I${b(s.index)} M${b(s.middle)} R${b(s.ring)} P${b(s.pinky)} → ${g ?? '—'}`,
-    );
 
     // Capture gestures always win.
     if (g) {
@@ -158,7 +150,6 @@ export function CameraScreen({
               <Text style={styles.zoomText}>📐 Wide</Text>
             </View>
           )}
-          <Text style={styles.debug}>{debug}</Text>
         </View>
 
         <View style={styles.center}>
@@ -183,15 +174,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   overlay: { flex: 1, justifyContent: 'space-between' },
   top: { paddingTop: 12, alignItems: 'center' },
-  debug: {
-    color: '#0f0',
-    fontSize: 14,
-    fontFamily: 'Courier',
-    marginTop: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
   zoomBadge: {
     marginTop: 8,
     backgroundColor: colors.accent,

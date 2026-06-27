@@ -96,16 +96,3 @@ export function fingersTogether(lm: HandLandmarks): boolean {
   const g3 = distance(lm[RING_TIP], lm[PINKY_TIP]);
   return Math.max(g1, g2, g3) < scale * TOGETHER_RATIO;
 }
-
-export type FingerStates = Record<Finger, boolean>;
-
-/** Extended/curled state for all five fingers — handy for debugging/tuning. */
-export function fingerStates(lm: HandLandmarks): FingerStates {
-  return {
-    thumb: isFingerExtended(lm, 'thumb'),
-    index: isFingerExtended(lm, 'index'),
-    middle: isFingerExtended(lm, 'middle'),
-    ring: isFingerExtended(lm, 'ring'),
-    pinky: isFingerExtended(lm, 'pinky'),
-  };
-}
