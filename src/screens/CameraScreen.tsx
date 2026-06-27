@@ -8,10 +8,11 @@ import {
   useFrameProcessor,
 } from 'react-native-vision-camera';
 import { useRunOnJS } from 'react-native-worklets-core';
-import { CaptureKind, Gesture, GESTURE_ACTION, HandLandmarks } from '../types';
+import { CaptureKind, FrameResult, Gesture, GESTURE_ACTION } from '../types';
 import { classifyGesture } from '../vision/gestures';
 import { isClosedPalm, isOpenPalm } from '../vision/fingers';
-import { detectHands } from '../vision/detectHands';
+import { detectCoupleHeart } from '../vision/couple';
+import { detectFrame } from '../vision/detectFrame';
 import { useGestureArming } from '../confirm/useGestureArming';
 import { usePhotoCapture } from '../capture/usePhotoCapture';
 import { useVideoCapture } from '../capture/useVideoCapture';
@@ -21,6 +22,8 @@ import { ConfirmRing } from '../ui/ConfirmRing';
 import { colors, GESTURE_EMOJI } from '../ui/theme';
 
 const HOLD_MS = 1500;
+const VIDEO_CLIP_MS = 5000; // 3️⃣ three-finger video
+const COUPLE_CLIP_MS = 3000; // 💞 couple-heart live clip
 // Default view is slightly cropped so ✋ open palm can "expand" to the lens's
 // full width. Front cameras can't go wider than their native FOV, so this is
 // the widest a selfie can get.
@@ -45,7 +48,7 @@ export function CameraScreen({
   const wideRef = useRef(false);
 
   const { takePhoto } = usePhotoCapture(cameraRef);
-  const { recording, startFiveSecondClip } = useVideoCapture(cameraRef);
+  const { recording, startClip } = useVideoCapture(cameraRef);
 
   const fire = useCallback(
     async (g: Gesture) => {
@@ -56,7 +59,8 @@ export function CameraScreen({
           const uri = await takePhoto();
           onCaptured({ uri, kind: 'photo' });
         } else {
-          const uri = await startFiveSecondClip();
+          const ms = g === 'coupleHeart' ? COUPLE_CLIP_MS : VIDEO_CLIP_MS;
+          const uri = await startClip(ms);
           onCaptured({ uri, kind: 'video' });
         }
       } catch {
@@ -65,12 +69,20 @@ export function CameraScreen({
         busyRef.current = false;
       }
     },
-    [takePhoto, startFiveSecondClip, onCaptured],
+    [takePhoto, startClip, onCaptured],
   );
 
   const arming = useGestureArming(HOLD_MS, fire);
 
-  const onHands = useRunOnJS((hands: HandLandmarks[]) => {
+  const onFrame = useRunOnJS((frame: FrameResult) => {
+    // 💞 Couple heart takes priority when two people pose together.
+    if (detectCoupleHeart(frame)) {
+      setCoach('💞 Couple heart — hold it!');
+      arming.update('coupleHeart');
+      return;
+    }
+
+    const hands = frame.hands;
     if (hands.length === 0) {
       setCoach('Show a gesture 👋');
       arming.update(null);
@@ -113,11 +125,11 @@ export function CameraScreen({
       'worklet';
       runAtTargetFps(6, () => {
         'worklet';
-        const hands = detectHands(frame);
-        onHands(hands);
+        const result = detectFrame(frame);
+        onFrame(result);
       });
     },
-    [onHands],
+    [onFrame],
   );
 
   if (device == null) {

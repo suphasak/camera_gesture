@@ -3,9 +3,9 @@ import Foundation
 import Vision
 import VisionCamera
 
-// Apple Vision hand-pose detector exposed as a VisionCamera frame processor.
-// Returns an array of hands; each hand is 21 landmarks {x, y, z} in MediaPipe
-// order, so it maps directly onto the JS gesture classifier.
+// Apple Vision frame processor: returns both hand landmarks and faces.
+//   { "hands": [[{x,y,z} × 21], ...], "faces": [{cx,cy,w,h,yaw}, ...] }
+// Coordinates are normalized with a top-left origin (smaller y == higher).
 @objc(HandPoseFrameProcessorPlugin)
 public class HandPoseFrameProcessorPlugin: FrameProcessorPlugin {
   public override init(proxy: VisionCameraProxyHolder, options: [AnyHashable: Any]! = [:]) {
@@ -23,33 +23,31 @@ public class HandPoseFrameProcessorPlugin: FrameProcessorPlugin {
   ]
 
   public override func callback(_ frame: Frame, withArguments _: [AnyHashable: Any]?) -> Any? {
+    let empty: [String: Any] = ["hands": [], "faces": []]
     guard let pixelBuffer = CMSampleBufferGetImageBuffer(frame.buffer) else {
-      return []
+      return empty
     }
 
-    let request = VNDetectHumanHandPoseRequest()
-    request.maximumHandCount = 2
+    let handRequest = VNDetectHumanHandPoseRequest()
+    handRequest.maximumHandCount = 4 // up to two people, a hand each (plus slack)
+
+    let faceRequest = VNDetectFaceRectanglesRequest()
+    faceRequest.revision = VNDetectFaceRectanglesRequestRevision3 // provides yaw
 
     // NOTE: orientation may need tuning on-device for the front camera
     // (e.g. .leftMirrored). Start with .up and adjust during QA.
     let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])
     do {
-      try handler.perform([request])
+      try handler.perform([handRequest, faceRequest])
     } catch {
-      return []
-    }
-
-    guard let observations = request.results, !observations.isEmpty else {
-      return []
+      return empty
     }
 
     var hands: [[[String: Double]]] = []
-    for observation in observations {
+    for observation in handRequest.results ?? [] {
       var points: [[String: Double]] = []
       for joint in joints {
         if let recognized = try? observation.recognizedPoint(joint), recognized.confidence > 0.3 {
-          // Vision normalized coords use a bottom-left origin; flip Y so the
-          // engine sees a top-left origin (smaller y == higher in frame).
           points.append([
             "x": Double(recognized.location.x),
             "y": Double(1.0 - recognized.location.y),
@@ -61,6 +59,19 @@ public class HandPoseFrameProcessorPlugin: FrameProcessorPlugin {
       }
       hands.append(points)
     }
-    return hands
+
+    var faces: [[String: Double]] = []
+    for face in faceRequest.results ?? [] {
+      let box = face.boundingBox // normalized, bottom-left origin
+      faces.append([
+        "cx": Double(box.midX),
+        "cy": Double(1.0 - box.midY), // flip to top-left origin
+        "w": Double(box.width),
+        "h": Double(box.height),
+        "yaw": face.yaw?.doubleValue ?? 0.0,
+      ])
+    }
+
+    return ["hands": hands, "faces": faces]
   }
 }
