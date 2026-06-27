@@ -19,7 +19,9 @@ import { useVideoCapture } from '../capture/useVideoCapture';
 import { CoachingPill } from '../ui/CoachingPill';
 import { GestureLegend } from '../ui/GestureLegend';
 import { ConfirmRing } from '../ui/ConfirmRing';
+import { HeartsOverlay } from '../ui/HeartsOverlay';
 import { colors, GESTURE_EMOJI } from '../ui/theme';
+import { overlayHearts } from '../../modules/hand-pose';
 
 const HOLD_MS = 1500;
 const VIDEO_CLIP_MS = 5000; // 3️⃣ three-finger video
@@ -46,6 +48,7 @@ export function CameraScreen({
   const [zoom, setZoom] = useState(normalZoom);
   const [wide, setWide] = useState(false);
   const wideRef = useRef(false);
+  const [coupleFx, setCoupleFx] = useState(false);
 
   const { takePhoto } = usePhotoCapture(cameraRef);
   const { recording, startClip } = useVideoCapture(cameraRef);
@@ -58,12 +61,19 @@ export function CameraScreen({
         if (GESTURE_ACTION[g] === 'photo') {
           const uri = await takePhoto();
           onCaptured({ uri, kind: 'photo' });
+        } else if (g === 'coupleHeart') {
+          setCoupleFx(true); // live hearts over the preview
+          const uri = await startClip(COUPLE_CLIP_MS);
+          setCoach('✨ Adding hearts…');
+          const decorated = await overlayHearts(uri); // bake hearts into the clip
+          setCoupleFx(false);
+          onCaptured({ uri: decorated, kind: 'video' });
         } else {
-          const ms = g === 'coupleHeart' ? COUPLE_CLIP_MS : VIDEO_CLIP_MS;
-          const uri = await startClip(ms);
+          const uri = await startClip(VIDEO_CLIP_MS);
           onCaptured({ uri, kind: 'video' });
         }
       } catch {
+        setCoupleFx(false);
         setCoach('Could not capture — try again');
       } finally {
         busyRef.current = false;
@@ -178,6 +188,8 @@ export function CameraScreen({
           <GestureLegend />
         </View>
       </SafeAreaView>
+
+      <HeartsOverlay visible={coupleFx} />
     </View>
   );
 }
