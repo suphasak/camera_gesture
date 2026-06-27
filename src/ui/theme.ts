@@ -13,7 +13,6 @@ export const colors = {
 export const GESTURE_EMOJI: Record<Gesture, string> = {
   thumbsUp: '👍',
   v: '✌️',
-  salute: '🫡',
   halfHeart: '🫰',
   three: '3️⃣',
   coupleHeart: '💞',
@@ -22,7 +21,6 @@ export const GESTURE_EMOJI: Record<Gesture, string> = {
 export const GESTURE_LABEL: Record<Gesture, string> = {
   thumbsUp: 'Thumbs up',
   v: 'V sign',
-  salute: 'Salute',
   halfHeart: 'Finger heart',
   three: 'Hold for video',
   coupleHeart: 'Couple heart',

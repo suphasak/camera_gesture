@@ -5,7 +5,6 @@ import {
   THUMB_TIP,
   WRIST,
   distance,
-  fingersTogether,
   handSize,
   isFingerExtended,
 } from './fingers';
@@ -31,12 +30,9 @@ export function classifyGesture(hands: HandLandmarks[]): Gesture | null {
   const ring = isFingerExtended(lm, 'ring');
   const pinky = isFingerExtended(lm, 'pinky');
 
-  const fourExtended = index && middle && ring && pinky;
-
   // Finger heart 🫰 (photo): thumb and index pinched close, the other three
-  // fingers folded. Requiring the three folded fingers keeps it distinct from a
-  // salute (where they're up). `indexRaised` keeps it distinct from a fist
-  // (index curls *down* into the palm rather than *up* to meet the thumb).
+  // fingers folded. `indexRaised` keeps it distinct from a fist (index curls
+  // *down* into the palm rather than *up* to meet the thumb).
   if (!middle && !ring && !pinky) {
     const scale = handSize(lm);
     const indexRaised =
@@ -49,9 +45,6 @@ export function classifyGesture(hands: HandLandmarks[]): Gesture | null {
       return 'halfHeart';
     }
   }
-
-  // Salute (photo): flat hand, four fingers extended and held together.
-  if (fourExtended && fingersTogether(lm)) return 'salute';
 
   // Three fingers up (video): index, middle, ring extended; pinky folded.
   if (index && middle && ring && !pinky) return 'three';

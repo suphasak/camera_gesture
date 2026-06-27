@@ -20,45 +20,19 @@ enum HeartOverlay {
     let inputURL = URL(fileURLWithPath: cleanPath)
     let asset = AVURLAsset(url: inputURL)
 
-    guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+    guard asset.tracks(withMediaType: .video).first != nil else {
       promise.resolve(inputUri) // nothing to do — hand back the original
       return
     }
 
-    let composition = AVMutableComposition()
-    guard
-      let compVideoTrack = composition.addMutableTrack(
-        withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)
-    else {
+    // Let AVFoundation build the correct instructions / render size / transform
+    // from the asset. Doing this manually is what was blacking out the video.
+    let videoComposition = AVMutableVideoComposition(propertiesOf: asset)
+    let renderSize = videoComposition.renderSize
+    guard renderSize.width > 0, renderSize.height > 0 else {
       promise.resolve(inputUri)
       return
     }
-
-    let timeRange = CMTimeRange(start: .zero, duration: asset.duration)
-    do {
-      try compVideoTrack.insertTimeRange(timeRange, of: videoTrack, at: .zero)
-      if let audioTrack = asset.tracks(withMediaType: .audio).first,
-        let compAudioTrack = composition.addMutableTrack(
-          withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)
-      {
-        try compAudioTrack.insertTimeRange(timeRange, of: audioTrack, at: .zero)
-      }
-    } catch {
-      promise.resolve(inputUri)
-      return
-    }
-
-    // Honor the source orientation so the render size / video aren't rotated.
-    let transform = videoTrack.preferredTransform
-    let natural = videoTrack.naturalSize
-    let transformed = natural.applying(transform)
-    let renderSize = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-
-    let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: compVideoTrack)
-    layerInstruction.setTransform(transform, at: .zero)
-    let instruction = AVMutableVideoCompositionInstruction()
-    instruction.timeRange = timeRange
-    instruction.layerInstructions = [layerInstruction]
 
     // Core Animation layer tree: video underneath, animated hearts on top.
     let parentLayer = CALayer()
@@ -68,10 +42,6 @@ enum HeartOverlay {
     parentLayer.addSublayer(videoLayer)
     addHearts(to: parentLayer, size: renderSize, duration: asset.duration.seconds)
 
-    let videoComposition = AVMutableVideoComposition()
-    videoComposition.renderSize = renderSize
-    videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
-    videoComposition.instructions = [instruction]
     videoComposition.animationTool = AVVideoCompositionCoreAnimationTool(
       postProcessingAsVideoLayer: videoLayer, in: parentLayer)
 
@@ -80,7 +50,7 @@ enum HeartOverlay {
 
     guard
       let export = AVAssetExportSession(
-        asset: composition, presetName: AVAssetExportPresetHighestQuality)
+        asset: asset, presetName: AVAssetExportPresetHighestQuality)
     else {
       promise.resolve(inputUri)
       return
@@ -154,6 +124,9 @@ enum HeartOverlay {
     ]
     layer.fillColor = pinks.randomElement()!.cgColor
     layer.bounds = CGRect(x: 0, y: 0, width: s, height: s)
+    // The video animation tool composites in a bottom-left coordinate space, so
+    // flip each heart vertically to keep it pointing the right way up.
+    layer.transform = CATransform3DMakeScale(1, -1, 1)
     return layer
   }
 

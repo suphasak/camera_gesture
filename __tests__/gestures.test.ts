@@ -1,6 +1,6 @@
 import { classifyGesture } from '../src/vision/gestures';
 import { HandLandmarks } from '../src/types';
-import { openHand, curlFinger, curlThumb, togetherFingers } from './_fixtures';
+import { openHand, curlFinger, curlThumb } from './_fixtures';
 
 function threeHand(): HandLandmarks {
   const lm = openHand();
@@ -25,12 +25,6 @@ function thumbsUpHand(): HandLandmarks {
   return lm;
 }
 
-function saluteHand(): HandLandmarks {
-  const lm = openHand();
-  togetherFingers(lm);
-  return lm;
-}
-
 function halfHeartHand(): HandLandmarks {
   const lm = openHand();
   curlFinger(lm, 'middle'); // 🫰: the other three fingers are folded
@@ -52,10 +46,6 @@ test('v sign', () => {
 
 test('thumbs up', () => {
   expect(classifyGesture([thumbsUpHand()])).toBe('thumbsUp');
-});
-
-test('salute (fingers together)', () => {
-  expect(classifyGesture([saluteHand()])).toBe('salute');
 });
 
 test('half-heart / love sign (thumb + index only)', () => {

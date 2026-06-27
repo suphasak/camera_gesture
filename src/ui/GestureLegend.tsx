@@ -5,7 +5,6 @@ import { colors, GESTURE_EMOJI } from './theme';
 const PHOTO = [
   { emoji: GESTURE_EMOJI.thumbsUp, label: 'Photo' },
   { emoji: GESTURE_EMOJI.v, label: 'Photo' },
-  { emoji: GESTURE_EMOJI.salute, label: 'Photo' },
   { emoji: GESTURE_EMOJI.halfHeart, label: 'Photo' },
 ];
 

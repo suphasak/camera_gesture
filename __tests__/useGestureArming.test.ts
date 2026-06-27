@@ -46,7 +46,7 @@ test('armed gesture does not refire while held', () => {
 
 test('progress climbs from 0 to 1', () => {
   let s = createArmingState(0);
-  s = armingStep(s, 'salute', 0, HOLD);
+  s = armingStep(s, 'halfHeart', 0, HOLD);
   expect(armingProgress(s, 750, HOLD)).toBeCloseTo(0.5);
   expect(armingProgress(s, 3000, HOLD)).toBe(1);
 });
