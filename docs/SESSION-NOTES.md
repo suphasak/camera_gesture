@@ -97,9 +97,9 @@ Apple ID signing team. The dev build expires ~every 7 days — re-run
 
 ## Known limitations / notes
 
-- **Dev debug overlay still on:** the green `T I M R P → gesture` line in
-  `CameraScreen` is a tuning aid. Remove it (and the `fingerStates` use) for a
-  polished build.
+- **Dev debug overlay removed** (commit `064cedf`) — the screen is clean now. If
+  you need finger-state readouts again for tuning, re-add a `fingerStates`
+  helper over `isFingerExtended` and render it in `CameraScreen`.
 - **Front camera can't truly go wider** than its native FOV — the iPhone 17
   "auto-expand" wide sensor is a private Apple feature not exposed by
   react-native-vision-camera. The wide-angle here is a relative expand from a
@@ -110,7 +110,6 @@ Apple ID signing team. The dev build expires ~every 7 days — re-run
 
 ## Possible next steps
 
-- Remove the debug overlay for a clean release.
 - Add light haptics on detect/capture/save.
 - Front/back camera flip.
 - Per-gesture sensitivity tuning if any gesture misfires in real use.
