@@ -2,20 +2,20 @@ import AVFoundation
 import ExpoModulesCore
 import UIKit
 
-// Expo module exposing `overlayHearts(uri)` — bakes floating heart balloons into
-// a recorded video using AVFoundation + Core Animation, and returns a new file.
+// Expo module exposing `overlayEffect(uri, effect)` — bakes an animated effect
+// ("hearts" or "butts") into a recorded video via AVFoundation + Core Animation.
 public class HandPoseModule: Module {
   public func definition() -> ModuleDefinition {
     Name("HandPose")
 
-    AsyncFunction("overlayHearts") { (uri: String, promise: Promise) in
-      HeartOverlay.render(inputUri: uri, promise: promise)
+    AsyncFunction("overlayEffect") { (uri: String, effect: String, promise: Promise) in
+      EffectOverlay.render(inputUri: uri, effect: effect, promise: promise)
     }
   }
 }
 
-enum HeartOverlay {
-  static func render(inputUri: String, promise: Promise) {
+enum EffectOverlay {
+  static func render(inputUri: String, effect: String, promise: Promise) {
     let cleanPath = inputUri.replacingOccurrences(of: "file://", with: "")
     let inputURL = URL(fileURLWithPath: cleanPath)
     let asset = AVURLAsset(url: inputURL)
@@ -40,7 +40,7 @@ enum HeartOverlay {
     parentLayer.frame = CGRect(origin: .zero, size: renderSize)
     videoLayer.frame = CGRect(origin: .zero, size: renderSize)
     parentLayer.addSublayer(videoLayer)
-    addHearts(to: parentLayer, size: renderSize, duration: asset.duration.seconds)
+    addEffects(to: parentLayer, size: renderSize, duration: asset.duration.seconds, effect: effect)
 
     videoComposition.animationTool = AVVideoCompositionCoreAnimationTool(
       postProcessingAsVideoLayer: videoLayer, in: parentLayer)
@@ -67,6 +67,71 @@ enum HeartOverlay {
           promise.resolve(inputUri) // fall back to the un-decorated clip
         }
       }
+    }
+  }
+
+  private static func addEffects(to parent: CALayer, size: CGSize, duration: Double, effect: String) {
+    if effect == "butts" {
+      addButts(to: parent, size: size, duration: duration)
+    } else {
+      addHearts(to: parent, size: size, duration: duration)
+    }
+  }
+
+  /// Cheeky 🍑 emojis tumbling and flying across the frame.
+  private static func addButts(to parent: CALayer, size: CGSize, duration: Double) {
+    let count = 10
+    let dur = max(duration, 1.0)
+    for i in 0..<count {
+      let s = CGFloat.random(in: 0.12...0.2) * min(size.width, size.height)
+      let butt = CATextLayer()
+      butt.string = "🍑"
+      butt.fontSize = s
+      butt.alignmentMode = .center
+      butt.contentsScale = 3
+      butt.bounds = CGRect(x: 0, y: 0, width: s * 1.4, height: s * 1.4)
+      butt.transform = CATransform3DMakeScale(1, -1, 1) // upright in bottom-left space
+
+      let fromLeft = Bool.random()
+      let startX = fromLeft ? -0.15 * size.width : 1.15 * size.width
+      let endX = fromLeft ? 1.15 * size.width : -0.15 * size.width
+      let yBase = CGFloat.random(in: 0.2...0.85) * size.height
+      let beginAt = Double(i) / Double(count) * dur * 0.8
+
+      // Fly across the screen.
+      let flyX = CABasicAnimation(keyPath: "position.x")
+      flyX.fromValue = startX
+      flyX.toValue = endX
+      // Bob up and down on the way.
+      let bobY = CABasicAnimation(keyPath: "position.y")
+      bobY.fromValue = yBase
+      bobY.toValue = yBase + CGFloat.random(in: -0.12...0.12) * size.height
+      bobY.autoreverses = true
+      bobY.duration = 0.5
+      bobY.repeatCount = .greatestFiniteMagnitude
+      // Tumble.
+      let spin = CABasicAnimation(keyPath: "transform.rotation.z")
+      spin.fromValue = 0
+      spin.toValue = CGFloat.random(in: -6...6)
+      let fade = CAKeyframeAnimation(keyPath: "opacity")
+      fade.values = [0.0, 1.0, 1.0, 0.0]
+      fade.keyTimes = [0.0, 0.1, 0.85, 1.0]
+
+      for anim in [flyX, spin, fade] {
+        anim.duration = dur
+        anim.beginTime = AVCoreAnimationBeginTimeAtZero + beginAt
+        anim.isRemovedOnCompletion = false
+        anim.fillMode = .forwards
+      }
+      bobY.beginTime = AVCoreAnimationBeginTimeAtZero + beginAt
+
+      butt.position = CGPoint(x: startX, y: yBase)
+      butt.opacity = 0
+      butt.add(flyX, forKey: "flyX")
+      butt.add(bobY, forKey: "bobY")
+      butt.add(spin, forKey: "spin")
+      butt.add(fade, forKey: "fade")
+      parent.addSublayer(butt)
     }
   }
 

@@ -11,7 +11,13 @@ export type Face = { cx: number; cy: number; w: number; h: number; yaw: number }
 export type FrameResult = { hands: HandLandmarks[]; faces: Face[] };
 
 /** Gestures the app recognizes. `coupleHeart` is a two-person pose, not a hand shape. */
-export type Gesture = 'thumbsUp' | 'v' | 'halfHeart' | 'three' | 'coupleHeart';
+export type Gesture =
+  | 'thumbsUp'
+  | 'v'
+  | 'halfHeart'
+  | 'three'
+  | 'coupleHeart'
+  | 'coupleV';
 
 /** What a recognized gesture triggers. */
 export type CaptureKind = 'photo' | 'video';
@@ -22,4 +28,5 @@ export const GESTURE_ACTION: Record<Gesture, CaptureKind> = {
   halfHeart: 'photo',
   three: 'video',
   coupleHeart: 'video',
+  coupleV: 'video',
 };

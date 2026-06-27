@@ -16,6 +16,7 @@ export const GESTURE_EMOJI: Record<Gesture, string> = {
   halfHeart: '🫰',
   three: '3️⃣',
   coupleHeart: '💞',
+  coupleV: '✌️✌️',
 };
 
 export const GESTURE_LABEL: Record<Gesture, string> = {
@@ -24,4 +25,5 @@ export const GESTURE_LABEL: Record<Gesture, string> = {
   halfHeart: 'Finger heart',
   three: 'Hold for video',
   coupleHeart: 'Couple heart',
+  coupleV: 'Couple V',
 };

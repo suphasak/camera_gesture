@@ -11,7 +11,7 @@ import { useRunOnJS } from 'react-native-worklets-core';
 import { CaptureKind, FrameResult, Gesture, GESTURE_ACTION } from '../types';
 import { classifyGesture } from '../vision/gestures';
 import { isClosedPalm, isOpenPalm } from '../vision/fingers';
-import { detectCoupleHeart } from '../vision/couple';
+import { detectCoupleHeart, detectCoupleV, isCoupleMode } from '../vision/couple';
 import { detectFrame } from '../vision/detectFrame';
 import { useGestureArming } from '../confirm/useGestureArming';
 import { usePhotoCapture } from '../capture/usePhotoCapture';
@@ -19,9 +19,9 @@ import { useVideoCapture } from '../capture/useVideoCapture';
 import { CoachingPill } from '../ui/CoachingPill';
 import { GestureLegend } from '../ui/GestureLegend';
 import { ConfirmRing } from '../ui/ConfirmRing';
-import { HeartsOverlay } from '../ui/HeartsOverlay';
+import { EffectsOverlay } from '../ui/EffectsOverlay';
 import { colors, GESTURE_EMOJI } from '../ui/theme';
-import { overlayHearts } from '../../modules/hand-pose';
+import { overlayEffect, ClipEffect } from '../../modules/hand-pose';
 
 const HOLD_MS = 1500;
 const VIDEO_CLIP_MS = 5000; // 3️⃣ three-finger video
@@ -48,7 +48,8 @@ export function CameraScreen({
   const [zoom, setZoom] = useState(normalZoom);
   const [wide, setWide] = useState(false);
   const wideRef = useRef(false);
-  const [coupleFx, setCoupleFx] = useState(false);
+  const [coupleFx, setCoupleFx] = useState<ClipEffect | null>(null);
+  const [coupleMode, setCoupleMode] = useState(false);
 
   const { takePhoto } = usePhotoCapture(cameraRef);
   const { recording, startClip } = useVideoCapture(cameraRef);
@@ -61,19 +62,20 @@ export function CameraScreen({
         if (GESTURE_ACTION[g] === 'photo') {
           const uri = await takePhoto();
           onCaptured({ uri, kind: 'photo' });
-        } else if (g === 'coupleHeart') {
-          setCoupleFx(true); // live hearts over the preview
+        } else if (g === 'coupleHeart' || g === 'coupleV') {
+          const effect: ClipEffect = g === 'coupleV' ? 'butts' : 'hearts';
+          setCoupleFx(effect); // live effect over the preview
           const uri = await startClip(COUPLE_CLIP_MS);
-          setCoach('✨ Adding hearts…');
-          const decorated = await overlayHearts(uri); // bake hearts into the clip
-          setCoupleFx(false);
+          setCoach(effect === 'butts' ? '✨ Adding 🍑…' : '✨ Adding hearts…');
+          const decorated = await overlayEffect(uri, effect); // bake into the clip
+          setCoupleFx(null);
           onCaptured({ uri: decorated, kind: 'video' });
         } else {
           const uri = await startClip(VIDEO_CLIP_MS);
           onCaptured({ uri, kind: 'video' });
         }
       } catch {
-        setCoupleFx(false);
+        setCoupleFx(null);
         setCoach('Could not capture — try again');
       } finally {
         busyRef.current = false;
@@ -85,11 +87,22 @@ export function CameraScreen({
   const arming = useGestureArming(HOLD_MS, fire);
 
   const onFrame = useRunOnJS((frame: FrameResult) => {
-    // 💞 Couple heart takes priority when two people pose together.
-    if (detectCoupleHeart(frame)) {
-      setCoach('💞 Couple heart — hold it!');
-      arming.update('coupleHeart');
-      return;
+    const couple = isCoupleMode(frame);
+    setCoupleMode(couple);
+
+    // Couple moves take priority when two people pose together.
+    // Check V first (specific shape) before the heart (any hand beside face).
+    if (couple) {
+      if (detectCoupleV(frame)) {
+        setCoach('✌️✌️ Couple V — hold it!');
+        arming.update('coupleV');
+        return;
+      }
+      if (detectCoupleHeart(frame)) {
+        setCoach('💞 Couple heart — hold it!');
+        arming.update('coupleHeart');
+        return;
+      }
     }
 
     const hands = frame.hands;
@@ -167,6 +180,11 @@ export function CameraScreen({
       <SafeAreaView style={styles.overlay} pointerEvents="none">
         <View style={styles.top}>
           <CoachingPill text={recording ? 'Recording… 🎥' : coach} />
+          {coupleMode && (
+            <View style={styles.coupleBadge}>
+              <Text style={styles.coupleText}>👫 Couple mode</Text>
+            </View>
+          )}
           {wide && (
             <View style={styles.zoomBadge}>
               <Text style={styles.zoomText}>📐 Wide</Text>
@@ -185,11 +203,11 @@ export function CameraScreen({
         </View>
 
         <View style={styles.bottom}>
-          <GestureLegend />
+          <GestureLegend couple={coupleMode} />
         </View>
       </SafeAreaView>
 
-      <HeartsOverlay visible={coupleFx} />
+      <EffectsOverlay effect={coupleFx} />
     </View>
   );
 }
@@ -206,6 +224,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   zoomText: { color: colors.text, fontSize: 16, fontWeight: '800' },
+  coupleBadge: {
+    marginTop: 8,
+    backgroundColor: '#FF3B7F',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  coupleText: { color: colors.text, fontSize: 16, fontWeight: '800' },
   center: { alignItems: 'center', justifyContent: 'center' },
   bottom: { paddingBottom: 20, alignItems: 'center' },
   recDot: {

@@ -2,19 +2,25 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, GESTURE_EMOJI } from './theme';
 
-const PHOTO = [
+const SOLO = [
   { emoji: GESTURE_EMOJI.thumbsUp, label: 'Photo' },
   { emoji: GESTURE_EMOJI.v, label: 'Photo' },
   { emoji: GESTURE_EMOJI.halfHeart, label: 'Photo' },
+  { emoji: GESTURE_EMOJI.three, label: '5s video' },
 ];
 
-export function GestureLegend() {
+const COUPLE = [
+  { emoji: GESTURE_EMOJI.coupleHeart, label: 'Heart clip' },
+  { emoji: GESTURE_EMOJI.coupleV, label: '🍑 clip' },
+];
+
+export function GestureLegend({ couple = false }: { couple?: boolean }) {
+  const items = couple ? COUPLE : SOLO;
   return (
     <View style={styles.row}>
-      {PHOTO.map((g, i) => (
-        <Item key={`p${i}`} emoji={g.emoji} label={g.label} />
+      {items.map((g, i) => (
+        <Item key={i} emoji={g.emoji} label={g.label} />
       ))}
-      <Item emoji={GESTURE_EMOJI.three} label="5s video" />
     </View>
   );
 }

@@ -1,4 +1,5 @@
 import { Face, FrameResult, HandLandmarks } from '../types';
+import { classifyGesture } from './gestures';
 
 // Tunable thresholds (radians / multiples of face size) — expect to adjust
 // these live on-device.
@@ -30,30 +31,52 @@ function handBesideFace(c: { x: number; y: number }, face: Face): boolean {
   return dy > -face.h * HAND_ABOVE && dy < face.h * HAND_BELOW;
 }
 
+/** The two largest frontal faces, ordered left→right, if they're side by side. */
+function twoFaces(frame: FrameResult): [Face, Face] | null {
+  const faces = frame.faces.filter(isFrontal);
+  if (faces.length < 2) return null;
+  const [f1, f2] = [...faces].sort((a, b) => b.w * b.h - a.w * a.h).slice(0, 2);
+  const [left, right] = f1.cx <= f2.cx ? [f1, f2] : [f2, f1];
+  if (Math.abs(left.cx - right.cx) < (left.w + right.w) * SIDE_BY_SIDE) return null;
+  return [left, right];
+}
+
+/** Two frontal faces side by side → couple mode is active. */
+export function isCoupleMode(frame: FrameResult): boolean {
+  return twoFaces(frame) !== null;
+}
+
+/** Each face has a distinct hand beside it satisfying `predicate`. */
+function eachFaceHasHand(
+  frame: FrameResult,
+  faces: [Face, Face],
+  predicate: (lm: HandLandmarks) => boolean,
+): boolean {
+  const [left, right] = faces;
+  const hands = frame.hands.map((lm, i) => ({ i, c: handCenter(lm), lm }));
+  const l = hands.find((h) => handBesideFace(h.c, left) && predicate(h.lm));
+  if (!l) return false;
+  const r = hands.find(
+    (h) => h.i !== l.i && handBesideFace(h.c, right) && predicate(h.lm),
+  );
+  return !!r;
+}
+
 /**
- * Couple half-heart: two people side by side, both facing the camera, each with
- * a hand raised beside their face. Pure — no React/native dependencies.
+ * Couple half-heart: two people side by side facing the camera, each with a
+ * hand raised beside their face. Pure — no React/native dependencies.
  */
 export function detectCoupleHeart(frame: FrameResult): boolean {
-  const faces = frame.faces.filter(isFrontal);
-  if (faces.length < 2) return false;
+  const faces = twoFaces(frame);
+  if (!faces) return false;
+  return eachFaceHasHand(frame, faces, () => true);
+}
 
-  // The two largest frontal faces, ordered left → right.
-  const [f1, f2] = [...faces]
-    .sort((a, b) => b.w * b.h - a.w * a.h)
-    .slice(0, 2);
-  const [left, right] = f1.cx <= f2.cx ? [f1, f2] : [f2, f1];
-
-  // Must be genuinely side by side, not overlapping / the same face.
-  if (Math.abs(left.cx - right.cx) < (left.w + right.w) * SIDE_BY_SIDE) {
-    return false;
-  }
-
-  const centers = frame.hands.map(handCenter);
-  const leftHand = centers.findIndex((c) => handBesideFace(c, left));
-  if (leftHand === -1) return false;
-  const rightHand = centers.findIndex(
-    (c, i) => i !== leftHand && handBesideFace(c, right),
-  );
-  return rightHand !== -1;
+/**
+ * Couple V-sign: two people side by side, each throwing a ✌️ beside their face.
+ */
+export function detectCoupleV(frame: FrameResult): boolean {
+  const faces = twoFaces(frame);
+  if (!faces) return false;
+  return eachFaceHasHand(frame, faces, (lm) => classifyGesture([lm]) === 'v');
 }
