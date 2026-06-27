@@ -22,6 +22,20 @@ public class HandPoseFrameProcessorPlugin: FrameProcessorPlugin {
     .littleMCP, .littlePIP, .littleDIP, .littleTip,
   ]
 
+  private func cgOrientation(_ o: UIImage.Orientation) -> CGImagePropertyOrientation {
+    switch o {
+    case .up: return .up
+    case .down: return .down
+    case .left: return .left
+    case .right: return .right
+    case .upMirrored: return .upMirrored
+    case .downMirrored: return .downMirrored
+    case .leftMirrored: return .leftMirrored
+    case .rightMirrored: return .rightMirrored
+    @unknown default: return .up
+    }
+  }
+
   public override func callback(_ frame: Frame, withArguments _: [AnyHashable: Any]?) -> Any? {
     let empty: [String: Any] = ["hands": [], "faces": []]
     guard let pixelBuffer = CMSampleBufferGetImageBuffer(frame.buffer) else {
@@ -34,9 +48,11 @@ public class HandPoseFrameProcessorPlugin: FrameProcessorPlugin {
     let faceRequest = VNDetectFaceRectanglesRequest()
     faceRequest.revision = VNDetectFaceRectanglesRequestRevision3 // provides yaw
 
-    // NOTE: orientation may need tuning on-device for the front camera
-    // (e.g. .leftMirrored). Start with .up and adjust during QA.
-    let handler = VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: .up, options: [:])
+    // Use the frame's real orientation so faces are seen upright (face
+    // detection is far more orientation-sensitive than hand detection).
+    let orientation = cgOrientation(frame.orientation)
+    let handler = VNImageRequestHandler(
+      cvPixelBuffer: pixelBuffer, orientation: orientation, options: [:])
     do {
       try handler.perform([handRequest, faceRequest])
     } catch {

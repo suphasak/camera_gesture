@@ -26,6 +26,8 @@ import { overlayEffect, ClipEffect } from '../../modules/hand-pose';
 const HOLD_MS = 1500;
 const VIDEO_CLIP_MS = 5000; // 3️⃣ three-finger video
 const COUPLE_CLIP_MS = 3000; // 💞 couple-heart live clip
+// Bridge brief face/hand detection dropouts so they don't reset the hold.
+const COUPLE_GRACE_MS = 500;
 // Default view is slightly cropped so ✋ open palm can "expand" to the lens's
 // full width. Front cameras can't go wider than their native FOV, so this is
 // the widest a selfie can get.
@@ -50,6 +52,8 @@ export function CameraScreen({
   const wideRef = useRef(false);
   const [coupleFx, setCoupleFx] = useState<ClipEffect | null>(null);
   const [coupleMode, setCoupleMode] = useState(false);
+  const lastCoupleRef = useRef<{ g: Gesture; t: number } | null>(null);
+  const coupleModeUntilRef = useRef(0);
 
   const { takePhoto } = usePhotoCapture(cameraRef);
   const { recording, startClip } = useVideoCapture(cameraRef);
@@ -87,22 +91,29 @@ export function CameraScreen({
   const arming = useGestureArming(HOLD_MS, fire);
 
   const onFrame = useRunOnJS((frame: FrameResult) => {
-    const couple = isCoupleMode(frame);
+    const now = Date.now();
+
+    // Couple mode, kept sticky for a moment so the badge/legend don't flicker.
+    if (isCoupleMode(frame)) coupleModeUntilRef.current = now + COUPLE_GRACE_MS;
+    const couple = now < coupleModeUntilRef.current;
     setCoupleMode(couple);
 
-    // Couple moves take priority when two people pose together.
-    // Check V first (specific shape) before the heart (any hand beside face).
-    if (couple) {
-      if (detectCoupleV(frame)) {
-        setCoach('✌️✌️ Couple V — hold it!');
-        arming.update('coupleV');
-        return;
-      }
-      if (detectCoupleHeart(frame)) {
-        setCoach('💞 Couple heart — hold it!');
-        arming.update('coupleHeart');
-        return;
-      }
+    // Couple moves take priority. Check V first (specific shape) before the
+    // heart (any hand beside face).
+    let coupleG: Gesture | null = null;
+    if (isCoupleMode(frame)) {
+      if (detectCoupleV(frame)) coupleG = 'coupleV';
+      else if (detectCoupleHeart(frame)) coupleG = 'coupleHeart';
+    }
+    if (coupleG) {
+      lastCoupleRef.current = { g: coupleG, t: now };
+    } else if (lastCoupleRef.current && now - lastCoupleRef.current.t < COUPLE_GRACE_MS) {
+      coupleG = lastCoupleRef.current.g; // bridge a brief dropout
+    }
+    if (coupleG) {
+      setCoach(coupleG === 'coupleV' ? '✌️✌️ Couple V — hold it!' : '💞 Couple heart — hold it!');
+      arming.update(coupleG);
+      return;
     }
 
     const hands = frame.hands;
